@@ -9,7 +9,7 @@ output:
     toc_float: true
     code_folding: show
 vignette: >
-  %\VignetteIndexEntry{An Example Workshop}
+  %\VignetteIndexEntry{RNA-seq differential expression with Bioconductor}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 params:
