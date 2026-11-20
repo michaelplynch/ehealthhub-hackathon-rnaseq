@@ -5,13 +5,13 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BuildABiocWorkshop • ehealthrnaseq</title>
+<title>RNA-seq differential expression with Bioconductor • ehealthrnaseq</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/flatly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="bootstrap-toc.css">
 <script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
-<script src="pkgdown.js"></script><meta property="og:title" content="BuildABiocWorkshop">
+<script src="pkgdown.js"></script><meta property="og:title" content="RNA-seq differential expression with Bioconductor">
 <meta property="og:description" content="This package serves as a demonstration of an RNA-seq differential expression workflow, to help non-BioC users understand BioC classes, application areas and needs to bridge between omics and clinical data.">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -57,7 +57,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/seandavi/BuildABiocWorkshop" class="external-link">
+  <a href="https://github.com/michaelplynch/ehealthhub-hackathon-rnaseq" class="external-link">
     <span class="fa fa-github"></span>
 
   </a>
@@ -75,99 +75,177 @@
       </header><div class="row">
   <div class="contents col-md-9">
 <div class="section level1">
-<div class="page-header"><h1 id="buildabiocworkshop">BuildABiocWorkshop<a class="anchor" aria-label="anchor" href="#buildabiocworkshop"></a>
+<div class="page-header"><h1 id="ehealthrnaseq-rna-seq-differential-expression-with-bioconductor">ehealthrnaseq: RNA-seq differential expression with Bioconductor<a class="anchor" aria-label="anchor" href="#ehealthrnaseq-rna-seq-differential-expression-with-bioconductor"></a>
 </h1></div>
-<p>This package is a template for building a Bioconductor workshop. The package includes Github actions to:</p>
-<ol style="list-style-type: decimal">
-<li>Set up bioconductor/bioconductor_docker:devel on Github resources</li>
-<li>Install package dependencies for your package (based on the <code>DESCRIPTION</code> file)</li>
-<li>Run <code><a href="http://r-lib.github.io/rcmdcheck/reference/rcmdcheck.html" class="external-link">rcmdcheck::rcmdcheck</a></code>
+<p>A short (~10 minute) demonstration of an RNA-seq differential expression workflow in Bioconductor, prepared for the eHealth Hub Bioconductor/OMOP hackathon. It is aimed at people who know clinical data models such as OMOP but are new to Bioconductor. It shows how omics data is held in Bioconductor classes, and where clinical variables enter the analysis.</p>
+<ul>
+<li>
+<strong>Website:</strong> <a href="https://michaelplynch.github.io/ehealthhub-hackathon-rnaseq/" class="uri">https://michaelplynch.github.io/ehealthhub-hackathon-rnaseq/</a>
 </li>
-<li>Build a pkgdown website and push it to github pages</li>
-<li>Build a docker image with the installed package and dependencies and deploy to <a href="https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#pulling-container-images" class="external-link">the Github Container Repository</a> at the name <code>ghcr.io/gihub_user/repo_name</code>, all lowercase.</li>
-</ol>
-<div class="section level2">
-<h2 id="responsibilities">Responsibilities<a class="anchor" aria-label="anchor" href="#responsibilities"></a>
-</h2>
-<p>Package authors are primarily responsible for:</p>
-<ol style="list-style-type: decimal">
-<li>Creating a landing site of their choosing for their workshops (a website). This website should be listed in the <code>DESCRIPTION</code> file as the <code>URL</code>.</li>
-<li>Creating a docker image that will contain workshop materials and the installed packages necessary to run those materials. The name of the resulting docker image, including “tag” if desired, should be listed in a non-standard tag, <code>DockerImage:</code> in the <code>DESCRIPTION</code> file.</li>
-</ol>
-<p>Both of those tasks can be accomplished using the Github actions included in this template package. The vignette accompanying this package describes how to accomplish both of these tasks.</p>
-</div>
-<div class="section level2">
-<h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a>
-</h2>
-<p>For detailed instructions, see the <code>How to build a workshop</code> article/vignette.</p>
-</div>
-<div class="section level2">
-<h2 id="results-of-successful-deployment">Results of successful deployment<a class="anchor" aria-label="anchor" href="#results-of-successful-deployment"></a>
-</h2>
-<ul>
-<li>A working docker image that contains the installed package and dependencies.</li>
-<li>An up-to-date <code>pkgdown</code> website at <a href="https://YOURUSERNAME.github.io/YOURREPOSITORYNAME/" class="external-link uri">https://YOURUSERNAME.github.io/YOURREPOSITORYNAME/</a>
+<li>
+<strong>Docker image:</strong> <code>ghcr.io/michaelplynch/ehealthhub-hackathon-rnaseq:latest</code>
 </li>
-<li>Docker image will be tagged with <code>latest</code>, <code>sha-XXXXXX</code> where <code>XXXXXX</code> is the hash of the current <code>master</code> commit, and <code>master</code>.</li>
+<li>
+<strong>Vignette:</strong> <a href="vignettes/rnaseq-demo.Rmd"><code>vignettes/rnaseq-demo.Rmd</code></a>
+</li>
 </ul>
-</div>
 <div class="section level2">
-<h2 id="warning-important-make-your-docker-image-public-on-ghcr">⚠️ IMPORTANT: Make Your Docker Image Public on GHCR<a class="anchor" aria-label="anchor" href="#warning-important-make-your-docker-image-public-on-ghcr"></a>
+<h2 id="what-the-demo-covers">What the demo covers<a class="anchor" aria-label="anchor" href="#what-the-demo-covers"></a>
 </h2>
-<blockquote>
-<p><strong>Your workshop Docker image will NOT be publicly accessible by default.</strong></p>
-<p>GitHub Container Registry (GHCR) sets all newly pushed packages to <strong>private</strong> visibility automatically. This means that anyone trying to pull your workshop image — attendees, workshop organizers, automated systems — <strong>will get an authentication error</strong> unless you explicitly change the visibility to <strong>public</strong>.</p>
-<p>This is a manual step that <strong>cannot be automated</strong> through the GitHub Actions workflow in this template, because changing package visibility requires owner-level permissions that exceed what the <code>GITHUB_TOKEN</code> secret can provide.</p>
-</blockquote>
-<div class="section level3">
-<h3 id="how-to-make-your-image-public">How to make your image public<a class="anchor" aria-label="anchor" href="#how-to-make-your-image-public"></a>
-</h3>
-<p>After GitHub Actions successfully pushes your Docker image for the first time:</p>
+<p>Using TCGA clear cell renal cell carcinoma (TCGA-KIRC) tumours and matched adjacent normal kidney:</p>
 <ol style="list-style-type: decimal">
-<li>Go to your GitHub profile or organization page</li>
-<li>Click the <strong>“Packages”</strong> tab</li>
-<li>Find your workshop package (it will be named after your repository)</li>
-<li>Click the package name to open it</li>
-<li>Click <strong>“Package settings”</strong> (bottom right of the package page)</li>
-<li>Scroll down to the <strong>“Danger Zone”</strong> section</li>
-<li>Click <strong>“Change visibility”</strong> → select <strong>Public</strong> → confirm</li>
+<li>
+<strong>Getting the data:</strong> STAR gene counts from the NCI Genomic Data Commons (GDC) via <code>TCGAbiolinks</code>, returned as a <code>RangedSummarizedExperiment</code>.</li>
+<li>
+<strong>The <code>SummarizedExperiment</code> class:</strong> how assays (counts), <code>rowData()</code>/<code>rowRanges()</code> (genes) and <code>colData()</code> (samples and clinical data) stay aligned when you subset.</li>
+<li>
+<strong>Differential expression with <code>DESeq2</code>:</strong> a paired design (<code>~ patient + condition</code>) that compares each tumour with the same patient’s normal tissue, with a PCA quality check and apeglm log fold change shrinkage.</li>
+<li>
+<strong>Checking the biology:</strong> clear cell tumours usually lose <em>VHL</em>, so hypoxia (HIF) targets such as <em>CA9</em>, <em>NDUFA4L2</em>, <em>VEGFA</em> and <em>EGLN3</em> should be strongly up in tumour.</li>
+<li>
+<strong>Visualisation:</strong> per-patient <em>CA9</em> plot, volcano plot and heatmap of the top genes.</li>
 </ol>
-<p>Alternatively, navigate directly to:</p>
-<pre><code>https://github.com/users/YOUR_USERNAME/packages/container/YOUR_REPO_NAME/settings</code></pre>
-<p>(or for organizations: <code>https://github.com/orgs/YOUR_ORG/packages/container/YOUR_REPO_NAME/settings</code>)</p>
+</div>
+<div class="section level2">
+<h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
+</h2>
+<p>The vignette runs on a small cached subset, so it doesn’t depend on the GDC being available:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td>Project</td>
+<td>TCGA-KIRC (open access)</td>
+</tr>
+<tr>
+<td>Samples</td>
+<td>10 patients, each with a primary tumour and a solid tissue normal sample (20 samples)</td>
+</tr>
+<tr>
+<td>Features</td>
+<td>Protein-coding genes (GENCODE v36)</td>
+</tr>
+<tr>
+<td>Assays</td>
+<td>
+<code>unstranded</code> raw counts, <code>tpm_unstrand</code>
+</td>
+</tr>
+<tr>
+<td>File</td>
+<td>
+<a href="inst/extdata"><code>inst/extdata/TCGA-KIRC_10pairs_STAR_counts.rds</code></a> (~2 MB)</td>
+</tr>
+</tbody>
+</table>
+<p>Patients are the first 10 paired cases by TCGA barcode. Data are from The Cancer Genome Atlas, obtained through the NCI GDC.</p>
+</div>
+<div class="section level2">
+<h2 id="running-the-demo">Running the demo<a class="anchor" aria-label="anchor" href="#running-the-demo"></a>
+</h2>
+<div class="section level3">
+<h3 id="option-1-docker-recommended">Option 1: Docker (recommended)<a class="anchor" aria-label="anchor" href="#option-1-docker-recommended"></a>
+</h3>
+<p>The image has R, Bioconductor 3.23, all dependencies and this package installed, with RStudio Server running:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">-e</span> PASSWORD=<span class="op">&lt;</span>choose_a_password<span class="op">&gt;</span> -p 8787:8787 ghcr.io/michaelplynch/ehealthhub-hackathon-rnaseq:latest</span></code></pre></div>
+<p>Open <a href="http://localhost:8787" class="external-link uri">http://localhost:8787</a>, log in as <code>rstudio</code> with your password, and open <code>vignettes/rnaseq-demo.Rmd</code>.</p>
 </div>
 <div class="section level3">
-<h3 id="why-does-this-matter">Why does this matter?<a class="anchor" aria-label="anchor" href="#why-does-this-matter"></a>
+<h3 id="option-2-locally">Option 2: Locally<a class="anchor" aria-label="anchor" href="#option-2-locally"></a>
 </h3>
-<p>Bioconductor workshops are meant to be open and reproducible. Attendees need to be able to <code>docker pull</code> your image <strong>without</strong> a GitHub account or any authentication. A private image silently breaks this for everyone. <strong>Make the image public before advertising your workshop.</strong></p>
-</div>
-<div class="section level3">
-<h3 id="relevant-documentation">Relevant documentation<a class="anchor" aria-label="anchor" href="#relevant-documentation"></a>
-</h3>
-<ul>
-<li><a href="https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility" class="external-link">GitHub Docs: Configuring a package’s access control and visibility</a></li>
-<li><a href="https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry" class="external-link">GitHub Docs: Working with the Container Registry</a></li>
-<li><a href="https://docs.github.com/en/packages/learn-github-packages/connecting-a-repository-to-a-package" class="external-link">GitHub Docs: Connecting a repository to a package</a></li>
-</ul>
-<hr>
+<p>Requires R and Bioconductor (developed against Bioconductor 3.23):</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, <span class="st">"remotes"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"michaelplynch/ehealthhub-hackathon-rnaseq"</span>,</span>
+<span>                        dependencies <span class="op">=</span> <span class="cn">TRUE</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                        repos <span class="op">=</span> <span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/repositories.html" class="external-link">repositories</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Or clone the repository and render the vignette directly:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">render</a></span><span class="op">(</span><span class="st">"vignettes/rnaseq-demo.Rmd"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="to-use-the-resulting-image">To use the resulting image:<a class="anchor" aria-label="anchor" href="#to-use-the-resulting-image"></a>
+<h2 id="changing-the-data">Changing the data<a class="anchor" aria-label="anchor" href="#changing-the-data"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">-e</span> PASSWORD=<span class="op">&lt;</span>choose_a_password_for_rstudio<span class="op">&gt;</span> -p 8787:8787 YOURDOCKERIMAGENAME</span></code></pre></div>
-<p>Once running, navigate to <a href="http://localhost:8787/" class="external-link uri">http://localhost:8787/</a> and then login with <code>rstudio</code>:<code>yourchosenpassword</code>.</p>
-<p>To try with <strong>this</strong> repository docker image:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">-e</span> PASSWORD=abc <span class="at">-p</span> 8787:8787 ghcr.io/bioconductor/buildabiocworkshop</span></code></pre></div>
-<p><em>NOTE</em>: Running docker that uses the password in plain text like above exposes the password to others in a multi-user system (like a shared workstation or compute node). In practice, consider using an environment variable instead of plain text to pass along passwords and other secrets in docker command lines.</p>
+<p>The vignette’s YAML <code>params</code> control the data. With a cached file present, nothing is downloaded.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>project</code></td>
+<td><code>"TCGA-KIRC"</code></td>
+<td>GDC project to use</td>
+</tr>
+<tr>
+<td><code>n_pairs</code></td>
+<td><code>10</code></td>
+<td>Number of tumour/normal pairs to download (<code>999</code> = all, ~70 for KIRC)</td>
+</tr>
+<tr>
+<td><code>data_dir</code></td>
+<td><code>"../inst/extdata"</code></td>
+<td>Where the prepared <code>.rds</code> is saved and read (relative to the vignette)</td>
+</tr>
+<tr>
+<td><code>gdc_dir</code></td>
+<td><code>"~/GDCdata"</code></td>
+<td>Where raw GDC files are downloaded (keep outside the repo)</td>
+</tr>
+<tr>
+<td><code>refresh</code></td>
+<td><code>false</code></td>
+<td>
+<code>true</code> to ignore the cached file and re-download</td>
+</tr>
+<tr>
+<td><code>fdr</code></td>
+<td><code>0.05</code></td>
+<td>False discovery rate threshold</td>
+</tr>
+</tbody>
+</table>
+<p>For example, to build a larger cached subset:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">render</a></span><span class="op">(</span><span class="st">"vignettes/rnaseq-demo.Rmd"</span>,</span>
+<span>                  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>n_pairs <span class="op">=</span> <span class="fl">30</span>, gdc_dir <span class="op">=</span> <span class="st">"/scratch/GDCdata"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Downloads run in small chunks, so if the GDC drops partway through, re-running fetches only the missing files. Fitting time grows quickly with the number of pairs, because the paired design adds one coefficient per patient.</p>
 </div>
 <div class="section level2">
-<h2 id="whatcha-get">Whatcha get<a class="anchor" aria-label="anchor" href="#whatcha-get"></a>
+<h2 id="repository-layout">Repository layout<a class="anchor" aria-label="anchor" href="#repository-layout"></a>
+</h2>
+<pre><code>├── DESCRIPTION, NAMESPACE      R package metadata
+├── vignettes/rnaseq-demo.Rmd   the demo
+├── inst/extdata/               cached TCGA-KIRC subset
+├── Dockerfile                  RStudio image built on bioconductor_docker:RELEASE_3_23
+├── _pkgdown.yml                website configuration
+└── .github/workflows/          R CMD check, pkgdown site and Docker image build</code></pre>
+<p>On every push, GitHub Actions runs <code>R CMD check</code>, deploys the pkgdown site to the <code>gh-pages</code> branch and pushes the Docker image to the GitHub Container Registry. New GHCR images are private by default, so the image’s visibility has to be set to <strong>public</strong> once in the package settings before others can pull it.</p>
+</div>
+<div class="section level2">
+<h2 id="acknowledgements">Acknowledgements<a class="anchor" aria-label="anchor" href="#acknowledgements"></a>
 </h2>
 <ul>
-<li><a href="https://bioconductor.github.io/BuildABiocWorkshop" class="external-link uri">https://bioconductor.github.io/BuildABiocWorkshop</a></li>
-<li>A Docker image that you can run locally, in the cloud, or (usually) even as a singularity container on HPC systems.</li>
+<li>Repository structure from the <a href="https://github.com/seandavi/BuildABiocWorkshop" class="external-link">BuildABiocWorkshop</a> template.</li>
+<li>Data generated by <a href="https://www.cancer.gov/tcga" class="external-link">The Cancer Genome Atlas</a> and distributed by the <a href="https://portal.gdc.cancer.gov/" class="external-link">NCI Genomic Data Commons</a>.</li>
+<li>Built with <a href="https://bioconductor.org/packages/TCGAbiolinks" class="external-link">TCGAbiolinks</a>, <a href="https://bioconductor.org/packages/SummarizedExperiment" class="external-link">SummarizedExperiment</a>, <a href="https://bioconductor.org/packages/DESeq2" class="external-link">DESeq2</a>, <a href="https://bioconductor.org/packages/apeglm" class="external-link">apeglm</a>, <a href="https://bioconductor.org/packages/edgeR" class="external-link">edgeR</a> and <a href="https://bioconductor.org/packages/ComplexHeatmap" class="external-link">ComplexHeatmap</a>.</li>
 </ul>
+</div>
+<div class="section level2">
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+</h2>
+<p>GPL (&gt;= 3); see <a href="LICENSE.html"><code>LICENSE.md</code></a>. Copyright Sean Davis (2020, template) and Michael Lynch (2026).</p>
 </div>
 </div>
   </div>
@@ -176,8 +254,8 @@
     <div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/seandavi/BuildABiocWorkshop/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/seandavi/BuildABiocWorkshop/issues/new/choose" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/michaelplynch/ehealthhub-hackathon-rnaseq/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/michaelplynch/ehealthhub-hackathon-rnaseq/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
