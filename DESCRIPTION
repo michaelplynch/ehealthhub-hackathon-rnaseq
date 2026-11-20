@@ -1,17 +1,14 @@
-Package: BuildABiocWorkshop
-Title: Bioconductor or R Workshop Template and Github Actions
-Version: 2.0.1
+Package: ehealthrnaseq
+Title: RNA-seq demo analysis for eHealth Bioconductor/OMOP hackathon
+Version: 0.9
 Authors@R: 
-    person(given = "Sean",
-           family = "Davis",
+    person(given = "Michael",
+           family = "Lynch",
            role = c("aut", "cre"),
-           email = "seandavi@gmail.com",
-           comment = c(ORCID = "0000-0002-8991-6458"))
-Description: This package serves as a template for using github actions to 
-    prepare a Bioconductor Workshop package for use. In particular,
-    a pkgdown website and docker image are generated based on workflow 
-    settings. 
-License: MIT + file LICENSE
+           email = "michael.lynch@ul.ie",
+           comment = c(ORCID = "0000-0001-9535-6461"))
+Description: This package serves as a demonstration of an RNA-seq differential expression workflow, to help non-BioC users understand BioC classes, application areas and needs to bridge between omics and clinical data.
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
@@ -21,7 +18,16 @@ Depends:
 Suggests: 
     knitr,
     rmarkdown,
-    pkgdown
+    pkgdown,
+    SummarizedExperiment,
+    DESeq2,
+    TCGAbiolinks,
+    apeglm,
+    edgeR,
+    ComplexHeatmap,
+    ggplot2,
+    dplyr,
+    tibble
 URL: https://seandavi.github.io/BuildABiocWorkshop/
 BugReports: https://github.com/seandavi/BuildABiocWorkshop/issues/new/choose
 VignetteBuilder: knitr
