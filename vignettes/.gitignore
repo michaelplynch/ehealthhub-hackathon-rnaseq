@@ -1,2 +1,6 @@
 *.html
 *.R
+# TCGAbiolinks scratch files and stray data
+MANIFEST.txt
+*.rds
+data/
