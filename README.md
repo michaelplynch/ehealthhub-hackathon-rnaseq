@@ -1,97 +1,129 @@
-# BuildABiocWorkshop
+# ehealthrnaseq: RNA-seq differential expression with Bioconductor
 
-This package is a template for building a Bioconductor workshop. The package
-includes Github actions to:
+A short (~10 minute) demonstration of an RNA-seq differential expression workflow in
+Bioconductor, prepared for the eHealth Hub Bioconductor/OMOP hackathon. It is aimed at people
+who know clinical data models such as OMOP but are new to Bioconductor. It shows how omics data
+is held in Bioconductor classes, and where clinical variables enter the analysis.
 
-1. Set up bioconductor/bioconductor_docker:devel on Github resources
-2. Install package dependencies for your package (based on the `DESCRIPTION` file)
-3. Run `rcmdcheck::rcmdcheck`
-4. Build a pkgdown website and push it to github pages
-5. Build a docker image with the installed package and dependencies and deploy to [the Github Container Repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#pulling-container-images) at the name `ghcr.io/gihub_user/repo_name`, all lowercase. 
+- **Website:** <https://michaelplynch.github.io/ehealthhub-hackathon-rnaseq/>
+- **Docker image:** `ghcr.io/michaelplynch/ehealthhub-hackathon-rnaseq:latest`
+- **Vignette:** [`vignettes/rnaseq-demo.Rmd`](vignettes/rnaseq-demo.Rmd)
 
-## Responsibilities
+## What the demo covers
 
-Package authors are primarily responsible for:
+Using TCGA clear cell renal cell carcinoma (TCGA-KIRC) tumours and matched adjacent normal kidney:
 
-1. Creating a landing site of their choosing for their workshops (a website). This website should be listed in the `DESCRIPTION` file as the `URL`.
-2. Creating a docker image that will contain workshop materials and the installed packages necessary to run those materials. The name of the resulting docker image, including "tag" if desired, should be listed in a non-standard tag, `DockerImage:` in the `DESCRIPTION` file. 
+1. **Getting the data:** STAR gene counts from the NCI Genomic Data Commons (GDC) via
+   `TCGAbiolinks`, returned as a `RangedSummarizedExperiment`.
+2. **The `SummarizedExperiment` class:** how assays (counts), `rowData()`/`rowRanges()` (genes)
+   and `colData()` (samples and clinical data) stay aligned when you subset.
+3. **Differential expression with `DESeq2`:** a paired design (`~ patient + condition`) that
+   compares each tumour with the same patient's normal tissue, with a PCA quality check and
+   apeglm log fold change shrinkage.
+4. **Checking the biology:** clear cell tumours usually lose *VHL*, so hypoxia (HIF) targets
+   such as *CA9*, *NDUFA4L2*, *VEGFA* and *EGLN3* should be strongly up in tumour.
+5. **Visualisation:** per-patient *CA9* plot, volcano plot and heatmap of the top genes.
 
-Both of those tasks can be accomplished using the Github actions included in this template package. The vignette accompanying this package describes how to accomplish both of these tasks.
+## Data
 
-## Details
+The vignette runs on a small cached subset, so it doesn't depend on the GDC being available:
 
-For detailed instructions, see the `How to build a workshop` article/vignette.
+| | |
+|---|---|
+| Project | TCGA-KIRC (open access) |
+| Samples | 10 patients, each with a primary tumour and a solid tissue normal sample (20 samples) |
+| Features | Protein-coding genes (GENCODE v36) |
+| Assays | `unstranded` raw counts, `tpm_unstrand` |
+| File | [`inst/extdata/TCGA-KIRC_10pairs_STAR_counts.rds`](inst/extdata) (~2 MB) |
 
-## Results of successful deployment
+Patients are the first 10 paired cases by TCGA barcode. Data are from The Cancer Genome Atlas,
+obtained through the NCI GDC.
 
-- A working docker image that contains the installed package and dependencies.
-- An up-to-date `pkgdown` website at https://YOURUSERNAME.github.io/YOURREPOSITORYNAME/
-- Docker image will be tagged with `latest`, `sha-XXXXXX` where `XXXXXX` is the hash of the current `master` commit, and `master`. 
+## Running the demo
 
-## ⚠️ IMPORTANT: Make Your Docker Image Public on GHCR
+### Option 1: Docker (recommended)
 
-> **Your workshop Docker image will NOT be publicly accessible by default.**
->
-> GitHub Container Registry (GHCR) sets all newly pushed packages to **private** visibility
-> automatically. This means that anyone trying to pull your workshop image — attendees,
-> workshop organizers, automated systems — **will get an authentication error** unless you
-> explicitly change the visibility to **public**.
->
-> This is a manual step that **cannot be automated** through the GitHub Actions workflow in
-> this template, because changing package visibility requires owner-level permissions that
-> exceed what the `GITHUB_TOKEN` secret can provide.
-
-### How to make your image public
-
-After GitHub Actions successfully pushes your Docker image for the first time:
-
-1. Go to your GitHub profile or organization page
-2. Click the **"Packages"** tab
-3. Find your workshop package (it will be named after your repository)
-4. Click the package name to open it
-5. Click **"Package settings"** (bottom right of the package page)
-6. Scroll down to the **"Danger Zone"** section
-7. Click **"Change visibility"** → select **Public** → confirm
-
-Alternatively, navigate directly to:
-```
-https://github.com/users/YOUR_USERNAME/packages/container/YOUR_REPO_NAME/settings
-```
-(or for organizations: `https://github.com/orgs/YOUR_ORG/packages/container/YOUR_REPO_NAME/settings`)
-
-### Why does this matter?
-
-Bioconductor workshops are meant to be open and reproducible. Attendees need to be able to
-`docker pull` your image **without** a GitHub account or any authentication. A private image
-silently breaks this for everyone. **Make the image public before advertising your workshop.**
-
-### Relevant documentation
-
-- [GitHub Docs: Configuring a package's access control and visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)
-- [GitHub Docs: Working with the Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
-- [GitHub Docs: Connecting a repository to a package](https://docs.github.com/en/packages/learn-github-packages/connecting-a-repository-to-a-package)
-
----
-
-## To use the resulting image:
+The image has R, Bioconductor 3.23, all dependencies and this package installed, with RStudio
+Server running:
 
 ```sh
-docker run -e PASSWORD=<choose_a_password_for_rstudio> -p 8787:8787 YOURDOCKERIMAGENAME
-```
-Once running, navigate to http://localhost:8787/ and then login with `rstudio`:`yourchosenpassword`. 
-
-To try with **this** repository docker image:
-
-```sh
-docker run -e PASSWORD=abc -p 8787:8787 ghcr.io/bioconductor/buildabiocworkshop
+docker run -e PASSWORD=<choose_a_password> -p 8787:8787 ghcr.io/michaelplynch/ehealthhub-hackathon-rnaseq:latest
 ```
 
-*NOTE*: Running docker that uses the password in plain text like above exposes the password to others 
-in a multi-user system (like a shared workstation or compute node). In practice, consider using an environment 
-variable instead of plain text to pass along passwords and other secrets in docker command lines. 
+Open <http://localhost:8787>, log in as `rstudio` with your password, and open
+`vignettes/rnaseq-demo.Rmd`.
 
+### Option 2: Locally
 
-## Whatcha get
+Requires R and Bioconductor (developed against Bioconductor 3.23):
 
-- https://bioconductor.github.io/BuildABiocWorkshop
-- A Docker image that you can run locally, in the cloud, or (usually) even as a singularity container on HPC systems. 
+```r
+install.packages(c("BiocManager", "remotes"))
+remotes::install_github("michaelplynch/ehealthhub-hackathon-rnaseq",
+                        dependencies = TRUE, build_vignettes = TRUE,
+                        repos = BiocManager::repositories())
+```
+
+Or clone the repository and render the vignette directly:
+
+```r
+rmarkdown::render("vignettes/rnaseq-demo.Rmd")
+```
+
+## Changing the data
+
+The vignette's YAML `params` control the data. With a cached file present, nothing is downloaded.
+
+| Parameter | Default | Meaning |
+|---|---|---|
+| `project` | `"TCGA-KIRC"` | GDC project to use |
+| `n_pairs` | `10` | Number of tumour/normal pairs to download (`999` = all, ~70 for KIRC) |
+| `data_dir` | `"../inst/extdata"` | Where the prepared `.rds` is saved and read (relative to the vignette) |
+| `gdc_dir` | `"~/GDCdata"` | Where raw GDC files are downloaded (keep outside the repo) |
+| `refresh` | `false` | `true` to ignore the cached file and re-download |
+| `fdr` | `0.05` | False discovery rate threshold |
+
+For example, to build a larger cached subset:
+
+```r
+rmarkdown::render("vignettes/rnaseq-demo.Rmd",
+                  params = list(n_pairs = 30, gdc_dir = "/scratch/GDCdata"))
+```
+
+Downloads run in small chunks, so if the GDC drops partway through, re-running fetches only the
+missing files. Fitting time grows quickly with the number of pairs, because the paired design adds
+one coefficient per patient.
+
+## Repository layout
+
+```
+├── DESCRIPTION, NAMESPACE      R package metadata
+├── vignettes/rnaseq-demo.Rmd   the demo
+├── inst/extdata/               cached TCGA-KIRC subset
+├── Dockerfile                  RStudio image built on bioconductor_docker:RELEASE_3_23
+├── _pkgdown.yml                website configuration
+└── .github/workflows/          R CMD check, pkgdown site and Docker image build
+```
+
+On every push, GitHub Actions runs `R CMD check`, deploys the pkgdown site to the `gh-pages`
+branch and pushes the Docker image to the GitHub Container Registry. New GHCR images are private
+by default, so the image's visibility has to be set to **public** once in the package settings
+before others can pull it.
+
+## Acknowledgements
+
+- Repository structure from the
+  [BuildABiocWorkshop](https://github.com/seandavi/BuildABiocWorkshop) template.
+- Data generated by [The Cancer Genome Atlas](https://www.cancer.gov/tcga) and distributed by the
+  [NCI Genomic Data Commons](https://portal.gdc.cancer.gov/).
+- Built with [TCGAbiolinks](https://bioconductor.org/packages/TCGAbiolinks),
+  [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment),
+  [DESeq2](https://bioconductor.org/packages/DESeq2),
+  [apeglm](https://bioconductor.org/packages/apeglm),
+  [edgeR](https://bioconductor.org/packages/edgeR) and
+  [ComplexHeatmap](https://bioconductor.org/packages/ComplexHeatmap).
+
+## License
+
+GPL (>= 3); see [`LICENSE.md`](LICENSE.md). Copyright Sean Davis (2020, template) and
+Michael Lynch (2026).
