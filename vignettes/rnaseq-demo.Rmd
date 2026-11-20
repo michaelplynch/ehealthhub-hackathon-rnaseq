@@ -1,0 +1,240 @@
+---
+title: "RNA-seq differential expression with Bioconductor"
+subtitle: "Clear cell renal carcinoma vs matched normal kidney (TCGA-KIRC) in 10 minutes"
+author: "Michael Lynch"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+vignette: >
+  %\VignetteIndexEntry{An Example Workshop}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+params:
+  project: "TCGA-KIRC"   # clear cell renal cell carcinoma, with adjacent normal kidney
+  n_pairs: 10            # tumour/normal pairs to download (999 = all, ~70 pairs)
+  data_dir: "../inst/extdata"    # repo-level data/ (relative to this vignette) -- commit this
+  gdc_dir: "~/GDCdata"   # raw GDC downloads -- keep out of git
+  refresh: false         # TRUE = ignore the saved .rds and re-download from GDC
+  fdr: 0.05
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 7, fig.height = 4.5, fig.align = "center")
+```
+
+```{r install, eval = FALSE, include = FALSE}
+# Run once before the session
+install.packages("BiocManager")
+BiocManager::install(c("TCGAbiolinks", "SummarizedExperiment", "DESeq2",
+                       "apeglm", "edgeR", "ComplexHeatmap"))
+install.packages(c("ggplot2", "dplyr", "tibble"))
+```
+
+```{r libraries}
+suppressPackageStartupMessages({
+  library(TCGAbiolinks)
+  library(SummarizedExperiment)
+  library(DESeq2)
+  library(ggplot2)
+  library(dplyr)
+  library(tibble)
+  library(ComplexHeatmap)
+})
+```
+
+# 1. Get the data
+
+`TCGAbiolinks` queries the GDC and returns STAR gene counts as a `RangedSummarizedExperiment`.
+Querying the GDC returns only file metadata, so we can drop unpaired patients *before* downloading
+anything. The prepared object is saved to `data/` and committed with the code, so the talk never
+depends on the GDC being up.
+
+```{r get-data}
+se_file <- file.path(params$data_dir,
+                     sprintf("%s_%dpairs_STAR_counts.rds", params$project, params$n_pairs))
+
+if (file.exists(se_file) && !params$refresh) {
+  se <- readRDS(se_file)
+} else {
+  gdc_dir <- path.expand(params$gdc_dir)
+
+  # TCGAbiolinks writes scratch files (MANIFEST.txt, df.rds, results.rds) to the working
+  # directory, so run the download from a temporary folder to keep the repo clean
+  owd <- setwd(tempdir())
+  se <- tryCatch({
+    query <- GDCquery(
+      project       = params$project,
+      data.category = "Transcriptome Profiling",
+      data.type     = "Gene Expression Quantification",
+      workflow.type = "STAR - Counts",
+      sample.type   = c("Primary Tumor", "Solid Tissue Normal")
+    )
+
+    # Keep only patients with both tumour and normal, then the first n_pairs of them
+    files   <- query$results[[1]]
+    patient <- substr(files$cases, 1, 12)
+    paired  <- intersect(patient[files$sample_type == "Solid Tissue Normal"],
+                         patient[files$sample_type == "Primary Tumor"])
+    paired  <- head(sort(paired), params$n_pairs)
+    query$results[[1]] <- files[patient %in% paired, ]
+    message(length(paired), " paired patients, ", nrow(query$results[[1]]), " files to download")
+
+    # Small chunks: if the GDC drops mid-download, re-running only fetches what's missing
+    GDCdownload(query, method = "api", files.per.chunk = 5, directory = gdc_dir)
+    GDCprepare(query, directory = gdc_dir)
+  }, finally = setwd(owd))
+
+  # Slim to what the demo uses so the saved object is small enough to commit
+  se <- se[rowData(se)$gene_type == "protein_coding", ]
+  assays(se) <- assays(se)[c("unstranded", "tpm_unstrand")]
+  colData(se) <- colData(se)[, vapply(colData(se), is.atomic, logical(1))]
+
+  dir.create(params$data_dir, showWarnings = FALSE, recursive = TRUE)
+  saveRDS(se, se_file, compress = "xz")
+}
+```
+
+# 2. The `SummarizedExperiment`
+
+One object holds the assay matrices, the feature annotation and the sample annotation, all kept in sync.
+
+```{r anatomy}
+se
+assayNames(se)                                      # several count/normalised matrices
+assay(se, "unstranded")[1:3, 1:3]                   # genes x samples
+rowRanges(se)[1:3, c("gene_name", "gene_type")]     # features carry genomic coordinates
+table(se$sample_type)                               # sample metadata lives in colData()
+```
+
+Subsetting keeps everything aligned: one `[` operation on features and samples, with no separate
+bookkeeping.
+
+```{r tidy}
+bc <- colnames(se)
+se$patient   <- factor(substr(bc, 1, 12))
+se$condition <- factor(ifelse(substr(bc, 14, 15) == "11", "normal", "tumor"),
+                       levels = c("normal", "tumor"))
+
+se <- se[rowData(se)$gene_type == "protein_coding",   # protein-coding genes
+         !duplicated(substr(bc, 1, 16))]              # one aliquot per sample
+
+dim(se)
+table(se$condition)
+```
+
+# 3. Differential expression with DESeq2
+
+Every patient contributes a tumour and an adjacent normal kidney sample, so the design blocks on
+patient (`~ patient + condition`). Each tumour is compared with that patient's own normal tissue.
+
+```{r dds}
+# Keep patients with both a tumour and a normal sample
+paired <- names(which(tapply(se$condition, se$patient, \(x) length(unique(x)) == 2)))
+se_p   <- se[, se$patient %in% paired]
+se_p$patient <- droplevels(se_p$patient)
+
+# Subset to speed up analysis and drop levels
+se_p<-se_p[,se_p$patient %in% c(unique(se_p$patient)[1:10])]
+for (v in names(colData(se_p))) {
+  if (is.factor(se_p[[v]])) se_p[[v]] <- droplevels(se_p[[v]])
+} 
+
+dds  <- DESeqDataSetFromMatrix(
+  countData = assay(se_p, "unstranded"),
+  colData   = colData(se_p)[, c("patient", "condition")],
+  rowData   = rowData(se_p)[, c("gene_name", "gene_type")],
+  design    = ~ patient + condition
+)
+dds <- dds[edgeR::filterByExpr(counts(dds), group = dds$condition), ]
+dds
+```
+
+## Quick QC: does tumour vs normal dominate?
+
+```{r pca}
+vsd <- vst(dds, blind = TRUE)
+plotPCA(vsd, intgroup = "condition") + theme_minimal()
+```
+
+## Fit and test
+
+```{r fit}
+dds <- DESeq(dds)
+res <- results(dds, name = "condition_tumor_vs_normal", alpha = params$fdr)
+res <- lfcShrink(dds, coef = "condition_tumor_vs_normal", res = res, type = "apeglm")
+summary(res)
+```
+
+```{r top}
+res_df <- as.data.frame(res) |>
+  rownames_to_column("gene_id") |>
+  mutate(symbol = rowData(dds)[gene_id, "gene_name"],
+         sig    = !is.na(padj) & padj < params$fdr & abs(log2FoldChange) > 1) |>
+  arrange(padj)
+
+head(res_df[, c("symbol", "baseMean", "log2FoldChange", "padj")], 10)
+```
+
+## Sanity check: the biology we expect
+
+Most clear cell tumours lose *VHL*, which switches on the hypoxia (HIF) response even with normal oxygen.
+Classic HIF targets should be strongly up in tumour.
+
+```{r hif}
+hif_genes <- c("CA9", "NDUFA4L2", "VEGFA", "EGLN3")
+res_df |> filter(symbol %in% hif_genes) |> select(symbol, log2FoldChange, padj)
+```
+
+```{r ca9, fig.height = 4}
+ca9 <- plotCounts(dds, gene = res_df$gene_id[match("CA9", res_df$symbol)],
+                  intgroup = c("condition", "patient"), returnData = TRUE)
+ggplot(ca9, aes(condition, count, group = patient)) +
+  geom_line(alpha = 0.3) +
+  geom_point(aes(colour = condition), size = 1.5) +
+  scale_y_log10() +
+  scale_colour_manual(values = c(normal = "steelblue", tumor = "firebrick"), guide = "none") +
+  labs(title = "CA9: each line is one patient", x = NULL, y = "normalised count (log scale)") +
+  theme_minimal()
+```
+
+# 4. Look at the results
+
+```{r volcano}
+ggplot(res_df, aes(log2FoldChange, -log10(pvalue), colour = sig)) +
+  geom_point(size = 0.7, alpha = 0.6) +
+  geom_text(data = slice_head(filter(res_df, sig), n = 12), aes(label = symbol),
+            colour = "black", size = 3, vjust = -0.6, check_overlap = TRUE) +
+  scale_colour_manual(values = c(`FALSE` = "grey70", `TRUE` = "firebrick"), guide = "none") +
+  labs(title = "Clear cell RCC vs matched normal kidney", x = "log2 fold change (shrunken)",
+       y = "-log10 p-value") +
+  theme_minimal()
+```
+
+```{r heatmap, fig.height = 6}
+top <- head(res_df$gene_id[res_df$sig], 30)
+m   <- t(scale(t(assay(vsd)[top, ])))
+rownames(m) <- rowData(vsd)[top, "gene_name"]
+
+Heatmap(m, name = "z-score", show_column_names = FALSE,
+        row_names_gp = grid::gpar(fontsize = 7),
+        top_annotation = HeatmapAnnotation(
+          condition = vsd$condition,
+          col = list(condition = c(normal = "steelblue", tumor = "firebrick"))))
+```
+
+# Takeaways
+
+* A `SummarizedExperiment` keeps counts, gene annotation and sample metadata together, so subsetting
+  never puts them out of sync.
+* Clinical variables in `colData()` go straight into the model formula, which is where
+  clinical data models meet the assay data.
+* The same pattern (container → design → model → results) carries over to edgeR, limma-voom
+  and single-cell workflows.
+
+```{r session, include = FALSE}
+sessionInfo()
+```
